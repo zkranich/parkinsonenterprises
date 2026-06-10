@@ -38,7 +38,21 @@
 .stat.active-stat.sched-active{background:var(--c-approval);border-color:var(--c-approval)}.stat.active-stat.sched-active .stat-n,.stat.active-stat.sched-active .stat-l{color:white}
 .stat.active-stat.comp-active{background:var(--c-approved);border-color:var(--c-approved)}.stat.active-stat.comp-active .stat-n,.stat.active-stat.comp-active .stat-l{color:white}
 .stat-n{font-size:26px;font-weight:600;letter-spacing:-1px;color:var(--ink)}.stat-l{font-size:11px;color:var(--ink3);margin-top:2px}
-.job-list{display:flex;flex-direction:column;gap:8px}.empty-msg{text-align:center;padding:60px 20px;color:var(--ink3);font-size:14px}
+.job-list{display:flex;flex-direction:column;gap:0}.empty-msg{text-align:center;padding:60px 20px;color:var(--ink3);font-size:14px}
+.store-group{margin-bottom:10px}
+.store-group-hdr{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer;margin-bottom:6px;transition:background .12s}
+.store-group-hdr:hover{background:var(--paper)}
+.store-group-hdr.open{border-radius:var(--r) var(--r) 0 0;margin-bottom:0;border-bottom:none}
+.store-group-name{font-size:14px;font-weight:600;font-family:var(--mono)}
+.store-group-sub{font-size:13px;color:var(--ink3);margin-left:8px}
+.store-group-info{display:flex;align-items:baseline;gap:0;flex:1}
+.store-group-count{font-family:var(--mono);font-size:11px;background:var(--paper);border:1px solid var(--line);padding:2px 8px;border-radius:10px;color:var(--ink3);flex-shrink:0}
+.store-group-chev{color:var(--ink3);transition:transform .2s;flex-shrink:0}
+.store-group-hdr.open .store-group-chev{transform:rotate(180deg)}
+.store-group-body{display:none;border:1px solid var(--line);border-top:none;border-radius:0 0 var(--r) var(--r);overflow:hidden}
+.store-group-hdr.open+.store-group-body{display:flex;flex-direction:column;gap:0}
+.store-group-body .jcard{border-radius:0;border-left:none;border-right:none;border-top:none}
+.store-group-body .jcard:last-child{border-bottom:none}
 .jcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--rlg);overflow:hidden;transition:border-color .15s,box-shadow .15s}
 .jcard:hover{border-color:rgba(24,24,26,.2);box-shadow:0 2px 14px rgba(0,0,0,.07)}.jcard.open{border-color:rgba(24,24,26,.22);box-shadow:0 4px 22px rgba(0,0,0,.09)}
 .jhead{padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:12px}
@@ -267,7 +281,47 @@ function statFilter(p){activeFilter=p;showView('jobs',document.querySelector('.t
 function renderJobList(){
   let f;if(activeFilter==='all')f=VISIBLE_JOBS;else if(activeFilter==='07.')f=VISIBLE_JOBS.filter(j=>j.step.includes('07.')||j.step.includes('08.'));else f=VISIBLE_JOBS.filter(j=>j.step.includes(activeFilter));
   const list=document.getElementById('job-list-all'),empty=document.getElementById('jobs-empty');
-  if(!f.length){list.innerHTML='';empty.style.display='block';return;}empty.style.display='none';list.innerHTML=f.map(j=>buildCard(j,'all')).join('');
+  if(!f.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+
+  // Group by store code
+  const groups={};
+  f.forEach(j=>{
+    const key=j.store||'Other';
+    if(!groups[key])groups[key]=[];
+    groups[key].push(j);
+  });
+
+  // Sort groups by store code
+  const sortedKeys=Object.keys(groups).sort();
+
+  list.innerHTML=sortedKeys.map(store=>{
+    const jobs=groups[store];
+    const customer=getCustomer(store)||'';
+    const addr=jobs[0].address;
+    const city=addr.split(',')[1]?.trim()||'';
+    const gid='sg-'+store.replace(/\s+/g,'-');
+    return `<div class="store-group">
+      <div class="store-group-hdr" id="${gid}-hdr" onclick="toggleStoreGroup('${gid}')">
+        <div class="store-group-info">
+          <div class="store-group-name">${esc(store)}</div>
+          <div class="store-group-sub">${city?'· '+esc(city):''}</div>
+        </div>
+        <span class="store-group-count">${jobs.length} job${jobs.length!==1?'s':''}</span>
+        <svg class="store-group-chev" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="store-group-body" id="${gid}-body">
+        ${jobs.map(j=>buildCard(j,'all')).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleStoreGroup(gid){
+  const hdr=document.getElementById(gid+'-hdr');
+  const body=document.getElementById(gid+'-body');
+  hdr.classList.toggle('open');
+  body.style.display=hdr.classList.contains('open')?'flex':'none';
 }
 // Customer lookup by store code prefix
 const CUSTOMERS={
