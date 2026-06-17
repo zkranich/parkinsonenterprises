@@ -402,6 +402,13 @@ async function uploadPhotos(id,pfx){
 }
 async function ssUpdateRow(rowId,colName,val){const colId=COL_MAP[colName];if(!colId)return false;return ssPut('/sheets/'+SHEET_ID+'/rows',[{id:rowId,cells:[{columnId:colId,value:val}]}]);}
 async function ssComment(rowId,text){return ssPost('/sheets/'+SHEET_ID+'/rows/'+rowId+'/discussions',{comment:{text:text}});}
+// PM Smartsheet emails for @mentions
+const PM_SMARTSHEET_EMAILS={
+  'Zak Kranich':'zkranich@farmerdevelopment.com',
+  'Jacob Dafoe':'jdafoe@farmerdevelopment.com',
+  'Connor Thomas':'cthomas@farmerdevelopment.com'
+};
+
 async function doNote(id,pfx){
   const txt=document.getElementById('note-inp-'+pfx+'-'+id).value.trim();
   const ok=document.getElementById('note-ok-'+pfx+'-'+id),er=document.getElementById('note-er-'+pfx+'-'+id);
@@ -409,11 +416,15 @@ async function doNote(id,pfx){
   if(!txt){er.textContent='Please enter a note.';er.classList.add('on');return;}
   const btn=ok.previousElementSibling;btn.disabled=true;btn.textContent='Posting…';
   try{
-    const res=await ssComment(id,`[${VENDOR_NAME}] ${txt}`);
+    // Build @mention for the job's PM so they get notified in Smartsheet
+    const j=JOBS.find(x=>x.id===id);
+    const pmEmail=j&&PM_SMARTSHEET_EMAILS[j.pm]?PM_SMARTSHEET_EMAILS[j.pm]:null;
+    const mention=pmEmail?`@[${j.pm}](${pmEmail}) `:'';
+    const comment=`${mention}[${VENDOR_NAME}] ${txt}`;
+    const res=await ssComment(id,comment);
     if(res){
       ok.classList.add('on');
       document.getElementById('note-inp-'+pfx+'-'+id).value='';
-      // Add note bubble to history
       const history=document.getElementById('notes-history-'+pfx+'-'+id);
       const now=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
       history.innerHTML+=`<div class="note-bubble"><div class="note-bubble-text">${esc(txt)}</div><div class="note-bubble-meta">${VENDOR_NAME} · ${now}</div></div>`;
