@@ -2,7 +2,7 @@
   "name": "Parkinson Enterprises — Vendor Portal",
   "short_name": "PE Portal",
   "description": "Job portal for Parkinson Enterprises",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F7F6F2",
   "theme_color": "#18181A",

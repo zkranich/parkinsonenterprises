@@ -10,9 +10,10 @@
 <meta name="theme-color" content="#18181A">
 <link rel="manifest" href="manifest.json">
 <title>Parkinson Enterprises — Vendor Portal</title>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBiW0zuaB27AFxKKBn69cnn8lPnC-B6CJA&libraries=marker" async defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root{--ink:#18181A;--ink2:#4a4a4f;--ink3:#8a8a92;--paper:#F7F6F2;--surface:#FFFFFF;--line:rgba(24,24,26,.1);--line2:rgba(24,24,26,.06);--r:10px;--rlg:14px;--font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace;--c-buyout-bg:#FFF3E0;--c-buyout:#E65100;--c-approval-bg:#E3F2FD;--c-approval:#1565C0;--c-dowork-bg:#E8F5E9;--c-dowork:#2E7D32;--c-pending-bg:#FCE4EC;--c-pending:#880E4F;--c-approved-bg:#E0F2F1;--c-approved:#00695C;--c-hold-bg:#F5F5F5;--c-hold:#616161}
@@ -116,8 +117,17 @@ textarea.ni{width:100%;padding:10px 12px;border:1px solid var(--line);border-rad
 .route-full-btn{display:flex;align-items:center;gap:7px;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;text-decoration:none;flex:1;justify-content:center;min-width:140px;border:none}
 .route-full-btn.gmaps{background:#4285F4;color:white}.route-full-btn.amaps{background:#1c1c1e;color:white}.route-full-btn:hover{opacity:.88}
 .route-empty{text-align:center;padding:40px 20px;color:var(--ink3);font-size:14px}
-#view-geo.active{display:flex;flex-direction:column}.geo-shell{display:flex;flex:1;height:calc(100vh - 105px)}
-#map{flex:1;min-width:0;min-height:300px}
+#view-geo.active{display:flex!important;flex-direction:column}
+.geo-shell{display:flex;flex:1;height:calc(100vh - 105px)}
+#gmap{flex:1;min-width:0;min-height:300px}
+.geo-sidebar{width:300px;flex-shrink:0;border-left:1px solid var(--line);overflow-y:auto;background:var(--surface);display:flex;flex-direction:column}
+.geo-sidebar-hdr{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;flex-shrink:0}
+.geo-item{padding:11px 16px;border-bottom:1px solid var(--line2);cursor:pointer;transition:background .12s}.geo-item:hover{background:var(--paper)}.geo-item.active-geo{background:#EDE9FE}
+.geo-item-store{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:2px}
+.geo-item-name{font-size:13px;font-weight:500;line-height:1.35}
+.geo-item-addr{font-size:11px;color:var(--ink3);margin-top:2px}
+.geo-item-badge{margin-top:4px}
+@media(max-width:660px){.geo-shell{flex-direction:column}#gmap{height:55vw;min-height:260px}.geo-sidebar{width:100%;height:220px;border-left:none;border-top:1px solid var(--line)}}
 .geo-sidebar{width:320px;flex-shrink:0;border-left:1px solid var(--line);overflow-y:auto;background:var(--surface);display:flex;flex-direction:column}
 .geo-sidebar-hdr{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;flex-shrink:0}
 .region-tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);flex-shrink:0}
@@ -148,7 +158,7 @@ textarea.ni{width:100%;padding:10px 12px;border:1px solid var(--line);border-rad
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;display:none;align-items:center;justify-content:center}.modal-bg.on{display:flex}
 .modal-box{background:white;border-radius:var(--rlg);overflow:hidden;max-width:88vw;max-height:88vh}.modal-box img{display:block;max-width:84vw;max-height:84vh;object-fit:contain}
 .modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:white;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-@media(max-width:660px){.stats-row{grid-template-columns:repeat(3,1fr)}.igrid{grid-template-columns:1fr}.iitem.full{grid-column:1}.jbadges{display:none}.geo-shell{flex-direction:column-reverse}.geo-sidebar{width:100%;height:260px;border-left:none;border-top:1px solid var(--line)}}
+@media(max-width:660px){.stats-row{grid-template-columns:repeat(3,1fr)}.igrid{grid-template-columns:1fr}.iitem.full{grid-column:1}.jbadges{display:none}.geo-shell{flex-direction:column}#map{height:55vw;min-height:260px}.geo-sidebar{height:220px}}
 </style>
 </head>
 <body>
@@ -163,12 +173,12 @@ textarea.ni{width:100%;padding:10px 12px;border:1px solid var(--line);border-rad
 </div>
 <div class="tabs-bar">
   <button class="tab-btn active" onclick="showView('jobs',this)">All Jobs</button>
-  <button class="tab-btn" onclick="showView('geo',this)">Geographic</button>
+  <button class="tab-btn" onclick="showView('geo',this)">Map</button>
   <button class="tab-btn" onclick="showView('sched',this)">Schedule</button>
   <button class="tab-btn" onclick="showView('est',this)">Need Estimates</button>
 </div>
 <div class="view active" id="view-jobs"><div class="shell"><div class="stats-row" id="stats-all"></div><div class="job-list" id="job-list-all"></div><div class="empty-msg" id="jobs-empty" style="display:none">No jobs in this category.</div></div></div>
-<div class="view" id="view-geo"><div class="geo-shell"><div id="map"></div><div class="geo-sidebar"><div class="geo-sidebar-hdr">Jobs by Region</div><div class="region-tabs" id="region-tabs"></div><div id="region-panels"></div></div></div></div>
+<div class="view" id="view-geo" style="display:none"><div class="geo-shell"><div id="gmap"></div><div class="geo-sidebar"><div class="geo-sidebar-hdr">Job Locations <span id="geo-count" style="font-family:var(--mono);font-size:11px;color:var(--ink3);font-weight:400;margin-left:6px"></span></div><div id="geo-job-list"></div></div></div></div>
 <div class="view" id="view-sched"><div class="shell">
   <div class="cal-nav"><button class="cal-nbtn" onclick="changeMonth(-1)"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><div class="cal-month" id="cal-month-lbl"></div><button class="cal-nbtn" onclick="changeMonth(1)"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
   <div class="cal-grid" id="cal-grid"></div>
@@ -180,7 +190,7 @@ textarea.ni{width:100%;padding:10px 12px;border:1px solid var(--line);border-rad
   <div class="job-list" id="job-list-est"></div><div class="empty-msg" id="est-empty" style="display:none">No jobs currently need estimates.</div>
 </div></div>
 <div class="modal-bg" id="img-modal" onclick="closeModal()"><button class="modal-close" onclick="closeModal()">✕</button><div class="modal-box" onclick="event.stopPropagation()"><img id="modal-img" src="" alt=""></div></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 const VENDOR_NAME='Parkinson Enterprises';
 const SHEET_ID='7509734909828';
@@ -274,7 +284,7 @@ function vStepLbl(s){if(!s)return s;if(s.includes('00.'))return 'Waiting for App
 function fmtD(d){if(!d)return '—';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function fmtM(n){return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function showView(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='geo')setTimeout(initMap,50);if(id==='sched')renderCal();}
+function showView(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='geo')buildGeoView();if(id==='sched')renderCal();}
 function buildAllStats(){
   const all=VISIBLE_JOBS.length,e=VISIBLE_JOBS.filter(j=>j.step.includes('01.')).length,b=VISIBLE_JOBS.filter(j=>j.step.includes('04.')).length,r=VISIBLE_JOBS.filter(j=>j.step.includes('05.')).length,c=VISIBLE_JOBS.filter(j=>j.step.includes('07.')||j.step.includes('08.')).length;
   document.getElementById('stats-all').innerHTML=`<div class="stat${activeFilter==='all'?' active-stat dk':''}" onclick="statFilter('all')"><div class="stat-n">${all}</div><div class="stat-l">All Jobs</div></div><div class="stat${activeFilter==='01.'?' active-stat est-active':''}" onclick="statFilter('01.')"><div class="stat-n">${e}</div><div class="stat-l">Need Estimate</div></div><div class="stat${activeFilter==='04.'?' active-stat appr-active':''}" onclick="statFilter('04.')"><div class="stat-n">${b}</div><div class="stat-l">Approved</div></div><div class="stat${activeFilter==='05.'?' active-stat sched-active':''}" onclick="statFilter('05.')"><div class="stat-n">${r}</div><div class="stat-l">Scheduled</div></div><div class="stat${activeFilter==='07.'?' active-stat comp-active':''}" onclick="statFilter('07.')"><div class="stat-n">${c}</div><div class="stat-l">Completed</div></div>`;
@@ -645,36 +655,68 @@ async function doInvoice(id,pfx){
     await ssUpdateRow(id,'Vendor Next Step','08. Need Invoice');
   }catch{er.classList.add('on');}btn.disabled=false;btn.textContent='Submit Invoice & Photos';
 }
-function initMap(){
-  if(leafMap)return;
-  leafMap=L.map('map').setView([42.45,-83.35],9);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'©OSM ©CARTO',maxZoom:19}).addTo(leafMap);
-  const grp={};VISIBLE_JOBS.forEach(j=>{const k=j.lat+','+j.lng;(grp[k]=grp[k]||[]).push(j);});
-  Object.values(grp).forEach(jobs=>{
-    const reg=REGIONS[jobs[0].region],color=reg?reg.color:'#666',cnt=jobs.length;
-    const icon=L.divIcon({className:'',html:`<div style="background:${color};color:white;width:${cnt>1?34:24}px;height:${cnt>1?34:24}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:${cnt>1?11:9}px;font-weight:500;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.25)">${cnt>1?cnt:'●'}</div>`,iconSize:[cnt>1?34:24,cnt>1?34:24],iconAnchor:[cnt>1?17:12,cnt>1?17:12]});
-    const m=L.marker([jobs[0].lat,jobs[0].lng],{icon}).addTo(leafMap);
-    m.bindPopup(`<div style="min-width:190px">${jobs.map(j=>`<div style="padding:4px 0;border-bottom:1px solid #eee;font-family:sans-serif"><div style="font-family:monospace;font-size:10px;color:#888">#${j.proj}</div><div style="font-size:12px;font-weight:500">${j.name}</div></div>`).join('')}</div>`,{maxWidth:250});
-    jobs.forEach(j=>mapMarkers[j.id]=m);
-  });
-  const tabs=document.getElementById('region-tabs'),panels=document.getElementById('region-panels');
-  let t='',p='',first=true;
-  Object.entries(REGIONS).forEach(([key,reg])=>{
-    const jobs=VISIBLE_JOBS.filter(j=>j.region===key);
-    t+=`<button class="rtab${first?' active':''}" onclick="switchRegion('${key}',this)">${reg.label}<span class="rtab-count">${jobs.length}</span></button>`;
-    p+=`<div class="geo-region-panel${first?' active':''}" id="rp-${key}"><div class="region-banner"><div class="region-banner-name"><span class="region-dot" style="background:${reg.color}"></span>${reg.label}</div><div class="region-banner-sub">${reg.bound} · ${jobs.length} job${jobs.length!==1?'s':''}</div></div>${jobs.length?jobs.map(j=>`<div class="geo-item" onclick="flyTo(${j.id})"><div class="geo-item-num">#${j.proj} · ${j.store}</div><div class="geo-item-name">${j.name}</div><div class="geo-item-badge"><span class="badge ${stepCls(j.step)}" style="font-size:10px;padding:2px 7px">${stepLbl(j.step)}</span></div></div>`).join(''):`<div class="geo-empty">No jobs in this region.</div>`}</div>`;
-    first=false;
-  });
-  tabs.innerHTML=t;panels.innerHTML=p;
+let geoBuilt=false,gmap=null,gMarkers={};
+function buildGeoView(){
+  if(geoBuilt)return;geoBuilt=true;
+  if(!VISIBLE_JOBS.length)return;
+  // Group by unique address
+  const addrGroups={};
+  VISIBLE_JOBS.forEach(j=>{const k=j.address||'';(addrGroups[k]=addrGroups[k]||[]).push(j);});
+  const addrs=Object.entries(addrGroups).sort((a,b)=>a[1][0].store.localeCompare(b[1][0].store));
+  document.getElementById('geo-count').textContent=addrs.length+' location'+(addrs.length!==1?'s':'');
+  // Build sidebar list
+  const list=document.getElementById('geo-job-list');
+  list.innerHTML=addrs.map(([addr,jobs],i)=>{
+    const store=jobs[0].store||'',customer=getCustomer(store)||'';
+    return `<div class="geo-item" id="gi-${i}" onclick="focusLocation(${i})">
+      <div class="geo-item-store">${esc(store)}${customer?' · '+customer:''}</div>
+      ${jobs.map(j=>`<div class="geo-item-name">${esc(j.name)}</div><div class="geo-item-badge"><span class="badge ${stepCls(j.step)}" style="font-size:10px;padding:2px 7px">${stepLblBadge(j.step,j.vStep)}</span></div>`).join('')}
+      <div class="geo-item-addr">${esc(addr)}</div>
+    </div>`;
+  }).join('');
+  // Initialize Google Map
+  const waitForMaps=()=>{
+    if(typeof google==='undefined'||!google.maps){setTimeout(waitForMaps,200);return;}
+    gmap=new google.maps.Map(document.getElementById('gmap'),{
+      zoom:9,center:{lat:42.45,lng:-83.35},
+      mapTypeControl:false,streetViewControl:false,fullscreenControl:true,
+      styles:[{featureType:'poi',stylers:[{visibility:'off'}]},{featureType:'transit',stylers:[{visibility:'off'}]}]
+    });
+    const bounds=new google.maps.LatLngBounds();
+    // Geocode each unique address and place a marker
+    addrs.forEach(([addr,jobs],i)=>{
+      const geocoder=new google.maps.Geocoder();
+      geocoder.geocode({address:addr},function(results,status){
+        if(status!=='OK')return;
+        const pos=results[0].geometry.location;
+        bounds.extend(pos);
+        const store=jobs[0].store||'';
+        const marker=new google.maps.Marker({
+          position:pos,map:gmap,
+          title:store,
+          label:{text:store,color:'black',fontSize:'9px',fontWeight:'600',fontFamily:'monospace'}
+        });
+        gMarkers[i]=marker;
+        // Info window content
+        const infoContent=`<div style="font-family:sans-serif;min-width:200px;padding:4px"><div style="font-family:monospace;font-size:11px;color:#888;margin-bottom:6px">${addr}</div>${jobs.map(j=>`<div style="padding:5px 0;border-bottom:1px solid #eee"><div style="font-size:12px;font-weight:500">${j.name}</div><span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#FFF3E0;color:#E65100;font-weight:500;display:inline-block;margin-top:3px">${stepLblBadge(j.step,j.vStep)}</span></div>`).join('')}<a href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank" style="display:block;margin-top:8px;font-size:12px;color:#1565C0;text-decoration:none">Get Directions →</a></div>`;
+        const infoWindow=new google.maps.InfoWindow({content:infoContent,maxWidth:280});
+        marker.addListener('click',()=>{
+          document.querySelectorAll('.geo-item').forEach(el=>el.classList.remove('active-geo'));
+          document.getElementById('gi-'+i)?.classList.add('active-geo');
+          document.getElementById('gi-'+i)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+          infoWindow.open(gmap,marker);
+        });
+        if(Object.keys(gMarkers).length===addrs.length){gmap.fitBounds(bounds);}
+      });
+    });
+  };
+  waitForMaps();
 }
-function switchRegion(key,btn){
-  document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.geo-region-panel').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');document.getElementById('rp-'+key).classList.add('active');
-  const jobs=VISIBLE_JOBS.filter(j=>j.region===key);
-  if(leafMap&&jobs.length)leafMap.flyToBounds(L.latLngBounds(jobs.map(j=>[j.lat,j.lng])),{padding:[40,40],maxZoom:13,duration:0.8});
+function focusLocation(i){
+  document.querySelectorAll('.geo-item').forEach(el=>el.classList.remove('active-geo'));
+  document.getElementById('gi-'+i)?.classList.add('active-geo');
+  if(gMarkers[i]){google.maps.event.trigger(gMarkers[i],'click');gmap.setZoom(15);gmap.panTo(gMarkers[i].getPosition());}
 }
-function flyTo(id){const j=JOBS.find(x=>x.id===id);if(!j||!leafMap)return;leafMap.flyTo([j.lat,j.lng],15,{duration:0.9});mapMarkers[id]?.openPopup();}
 function changeMonth(d){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+d,1);renderCal();}
 function renderCal(){
   const y=calDate.getFullYear(),m=calDate.getMonth();
